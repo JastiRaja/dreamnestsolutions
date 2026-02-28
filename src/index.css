@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure the browser doesn't force a background */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* This ensures the 'base' color is your darkest night mode color */
+  background-color: #020617; 
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Add a smooth transition for the background change */
+.solar-wrapper {
+  transition: background-color 1000ms ease-in-out;
+  background-color: var(--bg-tint);
+}
