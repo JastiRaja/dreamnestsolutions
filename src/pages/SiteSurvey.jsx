@@ -1,123 +1,170 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, ShieldCheck, Sun, CheckCircle } from 'lucide-react';
-import { useSolar } from '../context/SolarContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  MapPin, Calendar, Clock, Home, Zap, 
+  ShieldCheck, ArrowRight, CheckCircle2, ChevronDown, Check 
+} from 'lucide-react';
+import { PageTransition } from '../components/PageTransition';
 
-export default function SiteSurvey() {
-  const { solarState, location } = useSolar();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({ date: '', time: '10:00', address: '' });
-
-  const isDaylight = (time) => {
-    const hour = parseInt(time.split(':')[0]);
-    return hour >= 9 && hour <= 17;
-  };
+const CustomSelect = ({ label, options, value, onChange, icon: Icon }) => {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <section className="pt-40 pb-32 min-h-screen flex items-center justify-center">
-      <div className="max-w-4xl w-full px-6">
-        
-        {/* Progress Header */}
-        <div className="flex justify-between mb-12 max-w-xs mx-auto">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className={`h-1.5 w-20 rounded-full transition-all duration-500 ${step >= i ? 'bg-yellow-500' : 'bg-white/10'}`} />
-          ))}
+    <div className="space-y-2 relative">
+      <label className="text-xs font-black uppercase tracking-widest text-yellow-500 mb-2 block ml-1 drop-shadow-sm">
+        {label}
+      </label>
+      
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`relative w-full cursor-pointer rounded-2xl py-4 pl-12 pr-6 transition-all duration-300 flex items-center justify-between border-2 
+          ${isOpen 
+            ? 'border-yellow-500 bg-slate-800 shadow-[0_0_15px_rgba(234,179,8,0.2)]' 
+            : 'border-slate-700 bg-slate-900/80 hover:border-slate-500 hover:bg-slate-800'
+          }`}
+      >
+        <Icon className="absolute left-4 w-5 h-5 text-yellow-500" />
+        <span className={`text-sm font-bold ${value.includes("Select") ? 'text-slate-500' : 'text-slate-100'}`}>
+          {value}
+        </span>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+          <ChevronDown className="w-5 h-5 text-yellow-500" />
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.ul
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 5 }}
+              exit={{ opacity: 0, y: -5 }}
+              /* Lighter background for the dropdown to create separation */
+              className="absolute z-[100] left-0 right-0 top-full bg-slate-800 border-2 border-slate-600 rounded-2xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            >
+              {options.map((opt) => (
+                <li
+                  key={opt}
+                  onClick={() => { onChange(opt); setIsOpen(false); }}
+                  className="px-6 py-4 text-sm font-bold text-slate-200 flex items-center justify-between cursor-pointer hover:bg-yellow-500 hover:text-black transition-all border-b border-slate-700/50 last:border-0"
+                >
+                  {opt}
+                  {value === opt && <Check className="w-4 h-4" />}
+                </li>
+              ))}
+            </motion.ul>
+            <div className="fixed inset-0 z-[90]" onClick={() => setIsOpen(false)} />
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default function SiteSurvey() {
+  const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    propertyType: "Select Property Type",
+    bill: "",
+    address: "",
+    date: "",
+    slot: "Select Time Slot"
+  });
+
+  const inputStyle = `w-full bg-slate-900/80 border-2 border-slate-700 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-100 placeholder:text-slate-600 focus:border-yellow-500 focus:bg-slate-800 outline-none transition-all duration-300 hover:border-slate-500`;
+
+  if (submitted) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex items-center justify-center px-6 bg-[#0a0f1a]">
+          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="max-w-md w-full p-10 rounded-[3rem] border-2 border-yellow-500/30 text-center bg-slate-900 shadow-2xl">
+            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
+            <h2 className="text-3xl font-black mb-2 text-white uppercase tracking-tighter">Request Logged</h2>
+            <p className="text-slate-400 mb-8 text-sm">We've scheduled your LIDAR scan. Expect a call shortly.</p>
+            <button onClick={() => window.location.href = '/'} className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors">Return Home</button>
+          </motion.div>
         </div>
+      </PageTransition>
+    );
+  }
 
-        <div 
-          className="p-10 md:p-16 rounded-[4rem] border backdrop-blur-2xl transition-all duration-1000"
-          style={{ 
-            backgroundColor: 'var(--color-glass-bg)', 
-            borderColor: 'var(--color-nav-border)',
-            boxShadow: 'var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-opacity)'
-          }}
-        >
-          {step === 1 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-              <div className="text-center">
-                <h2 className="text-4xl font-black mb-4" style={{ color: 'var(--color-text-primary)' }}>Pick a Sunlight Window</h2>
-                <p className="opacity-60" style={{ color: 'var(--color-text-secondary)' }}>Surveys require clear daylight for precise LIDAR scanning.</p>
-              </div>
+  return (
+    <PageTransition>
+      <section className="pt-40 pb-32 bg-[#0a0f1a] min-h-screen">
+        <div className="max-w-2xl mx-auto px-6">
+          
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black mb-4 tracking-tighter text-white uppercase">
+              Site <span className="text-yellow-500">Audit Request</span>
+            </h2>
+            <div className="flex justify-center gap-2">
+              <div className={`h-1.5 w-16 rounded-full ${step >= 1 ? 'bg-yellow-500' : 'bg-slate-800'}`} />
+              <div className={`h-1.5 w-16 rounded-full ${step >= 2 ? 'bg-yellow-500' : 'bg-slate-800'}`} />
+            </div>
+          </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest opacity-40 ml-4" style={{ color: 'var(--color-text-primary)' }}>Select Date</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-5 top-5 w-5 h-5 text-yellow-500" />
-                    <input 
-                      type="date" 
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-14 rounded-3xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all"
-                      style={{ color: 'var(--color-text-primary)' }}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+          {/* Form Container with High Contrast Depth */}
+          <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} 
+            className="bg-slate-900 border border-slate-700 p-8 md:p-12 rounded-[3.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+          >
+            <AnimatePresence mode="wait">
+              {step === 1 ? (
+                <motion.div key="s1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+                  <CustomSelect 
+                    label="Property Type"
+                    options={["Residential Villa", "Apartment", "Commercial", "Industrial"]}
+                    value={formData.propertyType}
+                    onChange={(val) => setFormData({...formData, propertyType: val})}
+                    icon={Home}
+                  />
+
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-widest text-yellow-500 mb-2 block ml-1">Monthly Electricity Bill</label>
+                    <div className="relative">
+                      <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-yellow-500" />
+                      <input type="number" required placeholder="Amount in ₹" className={inputStyle} value={formData.bill} onChange={(e) => setFormData({...formData, bill: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-widest text-yellow-500 mb-2 block ml-1">Full Address</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-4 top-5 w-5 h-5 text-yellow-500" />
+                      <textarea required rows="3" placeholder="Enter complete site address" className={`${inputStyle} pl-12 pt-4 resize-none`} value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <button type="button" onClick={() => setStep(2)} className="w-full py-5 bg-yellow-500 text-black rounded-2xl font-black uppercase tracking-widest text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-yellow-500/10">
+                    Next Step
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="s2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-xs font-black uppercase tracking-widest text-yellow-500 mb-2 block ml-1">Select Date</label>
+                      <input type="date" required className={inputStyle} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                    </div>
+                    <CustomSelect 
+                      label="Preferred Slot"
+                      options={["Morning (10AM - 1PM)", "Afternoon (2PM - 6PM)"]}
+                      value={formData.slot}
+                      onChange={(val) => setFormData({...formData, slot: val})}
+                      icon={Clock}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest opacity-40 ml-4" style={{ color: 'var(--color-text-primary)' }}>Select Time</label>
-                  <div className="relative">
-                    <Clock className="absolute left-5 top-5 w-5 h-5 text-yellow-500" />
-                    <select 
-                      className="w-full bg-white/5 border border-white/10 p-5 pl-14 rounded-3xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all appearance-none"
-                      style={{ color: 'var(--color-text-primary)' }}
-                      onChange={(e) => setFormData({...formData, time: e.target.value})}
-                    >
-                      {["09:00", "10:00", "11:00", "13:00", "15:00", "17:00", "19:00"].map(t => (
-                        <option key={t} value={t} className="bg-slate-900">{t} {parseInt(t) > 17 ? ' (Low Sun)' : ''}</option>
-                      ))}
-                    </select>
+                  <div className="flex gap-4">
+                    <button type="button" onClick={() => setStep(1)} className="px-8 py-5 rounded-2xl border-2 border-slate-700 text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-colors">Back</button>
+                    <button type="submit" className="flex-1 py-5 bg-yellow-500 text-black rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-yellow-500/10 hover:bg-yellow-400 transition-colors">Confirm Audit</button>
                   </div>
-                </div>
-              </div>
-
-              {!isDaylight(formData.time) && (
-                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-500 text-sm font-bold">
-                  <Sun className="w-5 h-5" /> Warning: Limited accuracy after sunset.
-                </div>
+                </motion.div>
               )}
-
-              <button onClick={() => setStep(2)} className="w-full py-6 rounded-3xl bg-yellow-500 text-white font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
-                Next: Location Details
-              </button>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
-              <div className="text-center">
-                <h2 className="text-4xl font-black mb-4" style={{ color: 'var(--color-text-primary)' }}>Installation Site</h2>
-                <p className="opacity-60" style={{ color: 'var(--color-text-secondary)' }}>Currently detecting coverage for <span className="text-yellow-500 font-bold">{location}</span></p>
-              </div>
-
-              <div className="relative">
-                <MapPin className="absolute left-5 top-5 w-5 h-5 text-yellow-500" />
-                <textarea 
-                  placeholder="Enter full site address..."
-                  className="w-full bg-white/5 border border-white/10 p-5 pl-14 rounded-3xl h-32 outline-none focus:ring-2 focus:ring-yellow-500 transition-all"
-                  style={{ color: 'var(--color-text-primary)' }}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button onClick={() => setStep(1)} className="flex-1 py-6 rounded-3xl bg-white/5 border border-white/10 font-black uppercase tracking-widest" style={{ color: 'var(--color-text-primary)' }}>Back</button>
-                <button onClick={() => setStep(3)} className="flex-[2] py-6 rounded-3xl bg-yellow-500 text-white font-black uppercase tracking-widest shadow-2xl">Confirm Booking</button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="text-center py-10 animate-in zoom-in-95">
-              <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-8">
-                <CheckCircle className="w-12 h-12 text-green-500" />
-              </div>
-              <h2 className="text-4xl font-black mb-4" style={{ color: 'var(--color-text-primary)' }}>Survey Confirmed!</h2>
-              <p className="opacity-60 mb-10" style={{ color: 'var(--color-text-secondary)' }}>Our engineer will arrive on {formData.date || 'your selected date'} at {formData.time}.</p>
-              <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                <ShieldCheck className="text-yellow-500 w-5 h-5" /> Licensed Solar Professional Assigned
-              </div>
-            </div>
-          )}
+            </AnimatePresence>
+          </form>
         </div>
-      </div>
-    </section>
+      </section>
+    </PageTransition>
   );
 }
