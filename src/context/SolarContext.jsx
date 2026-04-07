@@ -1,11 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { calculateRoiProjection } from '../utils/roiCalculator';
 
 const SolarContext = createContext();
+
+function buildSimulatedGenerationSeries() {
+  const now = Date.now();
+  return Array.from({ length: 24 }, (_, i) => {
+    const hour = 23 - i;
+    const dayHour = (now - hour * 3600000) % 86400000;
+    const localHour = Math.floor(dayHour / 3600000);
+    const isDaylight = localHour >= 6 && localHour <= 18;
+    const generation = isDaylight ? Number((Math.random() * 4.5 + 0.6).toFixed(2)) : 0;
+    return {
+      timestamp: new Date(now - hour * 3600000).toISOString(),
+      generatedKwh: generation,
+    };
+  }).reverse();
+}
 
 export const SolarProvider = ({ children }) => {
   const [hours, setHours] = useState(new Date().getHours() + new Date().getMinutes() / 60);
   const [weather, setWeather] = useState('clear'); // clear, cloudy, rainy
   const [location, setLocation] = useState('Detecting...');
+  const [projectStage, setProjectStage] = useState('survey');
+  const [calcInput, setCalcInput] = useState({ monthlyBill: 3000, efficiencyOffset: 0.95 });
+  const [generationData, setGenerationData] = useState([]);
 
   // 1. Live Weather & Location Simulation
   useEffect(() => {
@@ -17,6 +36,27 @@ export const SolarProvider = ({ children }) => {
       });
     }
   }, []);
+
+  useEffect(() => {
+    // Simulated IoT feed that refreshes every minute.
+    const refreshRealtimeState = () => {
+      const now = new Date();
+      setHours(now.getHours() + now.getMinutes() / 60);
+      setGenerationData(buildSimulatedGenerationSeries());
+    };
+
+    refreshRealtimeState();
+    const timer = setInterval(refreshRealtimeState, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const roiProjection = useMemo(() => {
+    return calculateRoiProjection(calcInput.monthlyBill, {
+      years: 25,
+      annualTariffIncrease: 0.05,
+      efficiencyOffset: calcInput.efficiencyOffset,
+    });
+  }, [calcInput]);
 
   const solarState = useMemo(() => {
     let config = {
@@ -62,7 +102,21 @@ export const SolarProvider = ({ children }) => {
   };
 
   return (
-    <SolarContext.Provider value={{ hours, setHours, weather, location, solarState }}>
+    <SolarContext.Provider
+      value={{
+        hours,
+        setHours,
+        weather,
+        location,
+        solarState,
+        projectStage,
+        setProjectStage,
+        calcInput,
+        setCalcInput,
+        roiProjection,
+        generationData,
+      }}
+    >
       <div style={dynamicStyles} className="solar-wrapper min-h-screen transition-all duration-1000 overflow-x-hidden">
         {/* Atmosphere Layer */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" 

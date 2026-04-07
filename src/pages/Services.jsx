@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Truck, Wrench, MessageSquare, Home, ArrowRight, CheckCircle2, X } from 'lucide-react';
 import { PageTransition } from '../components/PageTransition';
+import ProjectTracker from '../components/ProjectTracker';
 
 const SERVICE_DETAILS = [
   {
@@ -60,11 +61,12 @@ const SERVICE_DETAILS = [
 
 export default function Services() {
   const [expandedId, setExpandedId] = useState(null);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <PageTransition>
-      <section className="pt-40 pb-32 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="pt-32 sm:pt-40 pb-24 sm:pb-32 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           
           <div className="mb-16">
             <h2 className="text-5xl font-black mb-4 tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>
@@ -75,12 +77,17 @@ export default function Services() {
             </p>
           </div>
 
+          <div className="mb-10">
+            <ProjectTracker />
+          </div>
+
           <div className="grid md:grid-cols-2 gap-8">
             {SERVICE_DETAILS.map((service) => (
               <motion.div 
                 key={service.id}
                 layout
-                className={`p-10 rounded-[3rem] border backdrop-blur-xl transition-all duration-500 overflow-hidden relative ${
+                whileTap={{ scale: 0.995 }}
+                className={`touch-manipulation p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border backdrop-blur-xl transition-all duration-500 overflow-hidden relative ${
                   expandedId === service.id ? 'ring-2 ring-yellow-500/50' : ''
                 }`}
                 style={{ 
@@ -89,12 +96,12 @@ export default function Services() {
                 }}
               >
                 <div className="flex items-start justify-between mb-8">
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6">
                     <div className={`p-5 rounded-2xl ${service.color}`}>
                       {service.icon}
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>
+                      <h3 className="text-xl sm:text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>
                         {service.title}
                       </h3>
                       <p className="opacity-60 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
@@ -104,7 +111,7 @@ export default function Services() {
                   </div>
                   
                   {expandedId === service.id && (
-                    <button onClick={() => setExpandedId(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                    <button onClick={() => setExpandedId(null)} className="touch-manipulation min-h-10 min-w-10 p-2 hover:bg-white/10 active:bg-white/10 rounded-full transition-colors">
                       <X className="w-5 h-5 opacity-40" />
                     </button>
                   )}
@@ -129,17 +136,19 @@ export default function Services() {
                           </div>
                         ))}
                       </div>
-                      <button className="mt-8 w-full py-4 rounded-2xl bg-yellow-500 text-white font-black uppercase tracking-widest text-xs hover:bg-yellow-600 transition-colors">
+                      <button className="touch-manipulation min-h-12 mt-8 w-full py-4 rounded-2xl bg-yellow-500 text-white font-black uppercase tracking-widest text-xs hover:bg-yellow-600 active:bg-yellow-700 transition-colors">
                         Request This Service
                       </button>
                     </motion.div>
                   ) : (
-                    <button 
+                    <motion.button 
                       onClick={() => setExpandedId(service.id)}
-                      className="flex items-center gap-2 text-yellow-500 font-black text-xs uppercase tracking-widest hover:gap-4 transition-all"
+                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="touch-manipulation min-h-10 flex items-center gap-2 text-yellow-500 font-black text-xs uppercase tracking-widest transition-all"
                     >
                       Learn More <ArrowRight className="w-4 h-4" />
-                    </button>
+                    </motion.button>
                   )}
                 </AnimatePresence>
               </motion.div>
